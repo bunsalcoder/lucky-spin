@@ -45,8 +45,20 @@ const modal = ref<HTMLElement>();
 
 const historyItems = [
   { no: '01', date: '11.08.25', win: 'iPhone' },
-  { no: '01', date: '11.08.25', win: 'Iped' },
-  { no: '01', date: '11.08.25', win: 'Printer' }
+  { no: '02', date: '11.08.25', win: 'Iped' },
+  { no: '03', date: '11.08.25', win: 'Printer' },
+  { no: '04', date: '11.08.24', win: 'Laptop' },
+  { no: '05', date: '11.08.24', win: 'MPOS Umbrella' },
+  { no: '06', date: '11.08.24', win: 'Store Promotional Video' },
+  { no: '07', date: '11.08.23', win: '10 rolls of thermal paper' },
+  { no: '08', date: '11.08.23', win: 'MPOS tissue box' },
+  { no: '09', date: '11.08.23', win: 'iPhone' },
+  { no: '10', date: '11.08.22', win: 'Laptop' },
+  { no: '11', date: '11.08.22', win: 'Printer' },
+  { no: '12', date: '11.08.22', win: 'MPOS Umbrella' },
+  { no: '13', date: '11.08.21', win: 'Store Promotional Video' },
+  { no: '14', date: '11.08.21', win: '10 rolls of thermal paper' },
+  { no: '15', date: '11.08.21', win: 'MPOS tissue box' }
 ];
 
 const closeModal = () => {
@@ -174,6 +186,8 @@ onMounted(async () => {
 
 .modal-content {
   padding: 1rem 2rem 1.5rem;
+  max-height: 50vh;
+  overflow: hidden;
 }
 
 .history-table {
@@ -181,13 +195,17 @@ onMounted(async () => {
   border-radius: 12px;
   overflow: hidden;
   background: #f9fafb;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .table-header {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 0.8fr 1fr 1.5fr;
   background: linear-gradient(135deg, #ceffd0, #aaeec1);
   border-bottom: 2px solid #e5e7eb;
+  flex-shrink: 0;
 }
 
 .header-cell {
@@ -207,11 +225,14 @@ onMounted(async () => {
 
 .table-body {
   background: white;
+  flex: 1;
+  overflow-y: auto;
+  max-height: 30vh;
 }
 
 .table-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 0.8fr 1fr 1.5fr;
   border-bottom: 1px solid #e5e7eb;
   transition: background-color 0.2s ease;
 
