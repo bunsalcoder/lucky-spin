@@ -3,4 +3,6 @@ export interface IItem {
   label: string;
   weight: number;
   order: number;
+  image?: string;
+  showLabel?: boolean;
 }
