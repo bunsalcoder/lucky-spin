@@ -8,11 +8,11 @@
  * If you have adhered to the terms of this license, you are welcome to make modifications to this section as needed.
  */
 if (
-  !window.location.hostname.endsWith('spin-wheel.click') &&
-  window.location.hostname !== 'localhost'
+    !window.location.hostname.endsWith('spin-wheel.click') &&
+    window.location.hostname !== 'localhost'
 ) {
-  window.location.href =
-    'https://unfair.spin-wheel.click' + window.location.pathname + window.location.search;
+    window.location.href =
+        'https://unfair.spin-wheel.click' + window.location.pathname + window.location.search;
 }
 
 import { createApp } from 'vue';
@@ -32,24 +32,25 @@ import 'shareon/css';
 import '@/assets/app.scss';
 import '@/assets/OBS.scss';
 if (navigator.userAgent.indexOf('OBS') !== -1) {
-  document.body.classList.add('obs');
+    document.body.classList.add('obs');
 }
 
 import SpinWheel from '@/components/SpinWheel.vue';
 import Footer from '@/components/Footer.vue';
+import { initializeLogin } from '@/services/MosAuthService';
 
 const app = createApp(App);
 app.use(PrimeVue, {
-  ripple: true,
-  pt: {
-    tabPanel: {
-      headerTitle: {
-        style: {
-          fontWeight: '400'
+    ripple: true,
+    pt: {
+        tabPanel: {
+            headerTitle: {
+                style: {
+                    fontWeight: '400'
+                }
+            }
         }
-      }
     }
-  }
 });
 app.use(DialogService);
 
@@ -59,5 +60,7 @@ app.component('DynamicDialog', DynamicDialog);
 
 app.component('SpinWheel', SpinWheel);
 app.component('Footer', Footer);
+
+initializeLogin().catch(console.error);
 
 app.mount('#app');

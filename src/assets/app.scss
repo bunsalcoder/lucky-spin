@@ -1,37 +1,18 @@
 body {
   // Should also change SpinWheel.vue
-  --font-family: 'Suez One', 'Mochiy Pop P One', 'Jua', 'Unbounded', 'Mitr', 'Noto Sans TC',
-    'Noto Sans SC', 'Noto Sans Lao', 'Noto Color Emoji';
+  --font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial,
+    sans-serif;
   font-family: var(--font-family);
   // For font checking
   // http://localhost:5173?group=Font%20test&data=eJw1jr9OwlAUxnefog_AUn0GF2fj7mCwgVQTWHRqqaYBWhgQCkqsklsh1dZGRMpFZMH99g0u9r_RpI_gbYnD-ZLz-76c8-2y-SJTOqa3d3L0VjjjPdsIxGo81kLxOiUmR4gPr2Jb3ZBA0by56fJ1l9fdyqMr1DYweB9ETzeRboQTyV-0gl4l5fLUv6yvpKPP-zLDHhLiP5tBR8TwFsMXDPVMtUyHqStbPnzAwMDgAwMLA0Bh0MYaR_2zaaZNDHgS95YX6M4RHN7hEUQ2mqWNhSZ5GXUNR0DQ4ZDlKGhBEhJJWMSP1dZvu_89MX46r2SN3mq-rOwza7hk89QBs56L5bT4eEBO7K1652cF6vSkWCowhCZqlyPTSNTh6Ks_StRGNUf_ActcwdU
 
-  $background-color: #90ee90;
+  $background-color: #212f56;
 
   background: $background-color;
-  background: linear-gradient(
-    to bottom,
-    #f7fff9 0%,
-    #aaeec1 25%,
-    #78f0a0 50%,
-    #5af093 75%,
-    #57f493 100%
-  );
+  background: -moz-radial-gradient(center, circle cover, $background-color 0%, #000000 100%);
+  background: -webkit-radial-gradient(center, circle cover, $background-color 0%, #000000 100%);
+  background: radial-gradient(circle at center, $background-color 0%, #000000 100%);
   background-attachment: fixed;
-
-  &::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.4) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
-      radial-gradient(circle at 40% 60%, rgba(255, 255, 255, 0.25) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: -1;
-  }
 
   margin: 0;
 
@@ -43,7 +24,14 @@ body {
 }
 
 .p-tooltip {
-  font-family: 'Rock Salt';
+  font-family:
+    'Roboto',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
   font-size: 0.75rem;
   text-align: center;
   font-weight: 700;
