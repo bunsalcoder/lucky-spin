@@ -264,8 +264,64 @@ const spinRandom = () => {
         spinningSound.value.play().catch((e) => console.log('Could not play spinning sound:', e));
     }
 
+    let segmentCount = 0;
+    let lastSegmentTime = performance.now();
+    let segmentInterval = 100;
+    let animationId: number | null = null;
+
+    const updateSoundBasedOnSegments = () => {
+        if (!wheel || !spinningSound.value || !isSpinning.value) {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            return;
+        }
+
+        const currentTime = performance.now();
+        const timeSinceLastSegment = currentTime - lastSegmentTime;
+
+        if (segmentInterval > 0) {
+            const speedFactor = 1000 / segmentInterval;
+            const maxSpeed = 30;
+
+            const minPlaybackRate = 0.8;
+            const maxPlaybackRate = 6.0;
+
+            let playbackRate =
+                minPlaybackRate +
+                (Math.min(speedFactor, maxSpeed) / maxSpeed) * (maxPlaybackRate - minPlaybackRate);
+
+            if (speedFactor > 20) {
+                playbackRate = Math.min(playbackRate, 4.0);
+            }
+
+            if (isFinite(playbackRate) && playbackRate > 0) {
+                playbackRate = Math.max(0.8, Math.min(6.0, playbackRate));
+                spinningSound.value.playbackRate = playbackRate;
+
+                let volume = 0.8;
+                if (speedFactor < 15) {
+                    volume = 0.8 + ((playbackRate - 0.8) / 5.2) * 0.2;
+                } else {
+                    volume = 0.7;
+                }
+                spinningSound.value.volume = Math.max(0.6, Math.min(1.0, volume));
+            }
+        }
+
+        if (isSpinning.value) {
+            animationId = requestAnimationFrame(updateSoundBasedOnSegments);
+        }
+    };
+
     wheel.onCurrentIndexChange = () => {
         if (!wheel) return;
+
+        const currentTime = performance.now();
+        segmentInterval = currentTime - lastSegmentTime;
+        lastSegmentTime = currentTime;
+        segmentCount++;
 
         switch (true) {
             case wheel.rotationSpeed < 400:
@@ -278,51 +334,28 @@ const spinRandom = () => {
                 wheel.rotationResistance = -10;
                 break;
         }
+    };
 
-        if (spinningSound.value) {
-            const speed = Math.min(wheel.rotationSpeed, 10000);
-
-            // Much more responsive playback rate for fast wheel speeds
-            let playbackRate;
-            if (speed > 7000) {
-                playbackRate = 6.0 + (speed - 7000) / 500; // 6.0x to 12.0x for very high speeds
-            } else if (speed > 4000) {
-                playbackRate = 3.0 + (speed - 4000) / 750; // 3.0x to 7.0x for high speeds
-            } else if (speed > 2000) {
-                playbackRate = 1.5 + (speed - 2000) / 1000; // 1.5x to 3.5x for medium speeds
-            } else {
-                playbackRate = 0.8 + speed / 2500; // 0.8x to 1.6x for low speeds
-            }
-
-            playbackRate = Math.max(0.8, Math.min(12.0, playbackRate));
-
-            // Volume that increases with speed for more dramatic effect
-            const volume = Math.max(0.5, Math.min(1.0, 0.5 + (speed / 10000) * 0.5));
-
-            spinningSound.value.playbackRate = playbackRate;
-            spinningSound.value.volume = volume;
-        }
+    wheel.onSpin = () => {
+        isSpinning.value = true;
+        lastSegmentTime = performance.now();
+        segmentInterval = 100;
+        updateSoundBasedOnSegments();
     };
 
     wheel.rotationResistance = -800;
-    // Use a much higher initial speed for faster spinning
     wheel.spin(8000 + random.int(2000, 4000));
 };
 
-// Store current items for winning prize lookup
 let currentItems: any[] = [];
 let originalProducts: Product[] = [];
 
-// Initialize wheel with items
 const initializeWheel = (items: any[]) => {
     if (!container.value) return;
 
-    // Store the current items for winning prize lookup
     currentItems = items;
-    // Store original products for better matching
     originalProducts = props.products || [];
 
-    // Process items for the wheel
     const processedItems = items.map((item) => {
         const processedItem: any = {
             ...item,
@@ -333,11 +366,9 @@ const initializeWheel = (items: any[]) => {
             imageScale: 0.03
         };
 
-        // Control label visibility and display only English labels
         if (item.showLabel === false) {
             processedItem.label = '';
         } else {
-            // Display only English labels with ellipsis if too long
             const englishLabel = item.label;
             const chineseLabel = item.chineseLabel;
             const maxLength = 7;
@@ -356,15 +387,10 @@ const initializeWheel = (items: any[]) => {
         return processedItem;
     });
 
-    console.log({ processedItems });
-
-    // Recreate wheel if it exists
     if (wheel) {
-        // Clear only the wheel elements, preserve background and spin button
         if (container.value) {
             const backgroundElements = container.value.querySelectorAll('picture, .image, .icon');
             container.value.innerHTML = '';
-            // Restore background elements and spin button
             backgroundElements.forEach((element: Element) => {
                 container.value.appendChild(element);
             });
@@ -382,23 +408,19 @@ const initializeWheel = (items: any[]) => {
         console.log('Spin ended on:', $event);
         isSpinning.value = false;
 
-        // Stop spinning sound
         if (spinningSound.value) {
             spinningSound.value.pause();
             spinningSound.value.currentTime = 0;
         }
 
-        // Play result sound
         if (resultSound.value) {
             resultSound.value.currentTime = 0;
             resultSound.value.play().catch((e) => console.log('Could not play result sound:', e));
         }
 
-        // Get the winning prize from award API or current items
         const winningIndex = $event.currentIndex;
 
         if (props.award && usingAwardData.value) {
-            // Use award data from API
             winningPrize.value = {
                 label: props.award.productEnName,
                 chineseLabel: props.award.productZhName,
@@ -407,7 +429,6 @@ const initializeWheel = (items: any[]) => {
             };
             console.log('Using award data for winning prize:', winningPrize.value);
         } else {
-            // Fallback to current items
             winningPrize.value = currentItems[winningIndex];
             console.log('Using wheel index for winning prize:', winningPrize.value);
         }
@@ -415,7 +436,6 @@ const initializeWheel = (items: any[]) => {
         console.log('Winning prize:', winningPrize.value);
         console.log('Winning index:', winningIndex);
 
-        // Show explosion animation
         showExplosion.value = true;
         console.log('Explosion should be visible:', showExplosion.value);
     };
@@ -424,7 +444,6 @@ const initializeWheel = (items: any[]) => {
         console.log('Spin started');
         isSpinning.value = true;
 
-        // Ensure spinning sound is playing
         if (spinningSound.value && spinningSound.value.paused) {
             spinningSound.value
                 .play()
@@ -432,7 +451,6 @@ const initializeWheel = (items: any[]) => {
         }
     };
 
-    // Workaround for itemLabelRadiusMax not working on first load.
     setTimeout(() => {
         if (wheel) {
             wheel.itemLabelRadiusMax = 0.3;
@@ -441,7 +459,6 @@ const initializeWheel = (items: any[]) => {
 };
 
 onMounted(() => {
-    // Initialize sound effects
     spinningSound.value = new Audio('/sound/start-13691.mp3');
     spinningSound.value.loop = true;
     spinningSound.value.volume = 0.9;
@@ -449,18 +466,15 @@ onMounted(() => {
     resultSound.value = new Audio('/sound/tada-fanfare-a-6313.mp3');
     resultSound.value.volume = 0.9;
 
-    // Initialize wheel with current products or mock data
     const items = convertProductsToWheelItems(props.products);
     initializeWheel(items);
 });
 
-// Watch for changes in products
 watch(
     () => props.products,
     (newProducts) => {
         if (newProducts && newProducts.length > 0) {
             console.log('Products updated, reinitializing wheel:', newProducts);
-            // Update original products
             originalProducts = newProducts;
             const items = convertProductsToWheelItems(newProducts);
             initializeWheel(items);
@@ -481,11 +495,9 @@ watch(
             console.log('Current wheel items:', currentItems);
             console.log('Original products:', originalProducts);
 
-            // First, try to find the matching product in original products
             let winningIndex = -1;
             let matchedProduct = null;
 
-            // Method 1: Match by original product data
             if (originalProducts.length > 0) {
                 const originalIndex = originalProducts.findIndex((product) => {
                     console.log(`Comparing: "${product.enName}" with "${newAward.productEnName}"`);
