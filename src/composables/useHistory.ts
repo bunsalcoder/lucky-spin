@@ -4,6 +4,7 @@ import { getHistory, type HistoryRecord } from '@/services/HistoryService';
 export interface HistoryItem {
     no: string;
     date: string;
+    time: string;
     win: string;
     chineseName?: string;
 }
@@ -39,11 +40,16 @@ export function useHistory() {
                 date.getDate()
             ).padStart(2, '0')}.${String(date.getFullYear()).slice(-2)}`;
 
+            const formattedTime = `${String(date.getHours()).padStart(2, '0')}:${String(
+                date.getMinutes()
+            ).padStart(2, '0')}`;
+
             const no = String(index + 1).padStart(2, '0');
 
             return {
                 no,
                 date: formattedDate,
+                time: formattedTime,
                 win: record.productEnName,
                 chineseName: record.productZhName
             };

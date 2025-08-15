@@ -96,8 +96,8 @@ const properties: WheelProps = {
     rotationResistance: 0,
     itemLabelRadius: 0.5,
     itemLabelRadiusMax: 0.3,
-    itemLabelRotation: 90,
-    itemLabelAlign: 'center',
+    // itemLabelRotation: 90,
+    // itemLabelAlign: 'center',
     itemLabelColors: ['#FFFFFF'],
     itemLabelBaselineOffset: -0.15,
     itemLabelFont:
@@ -441,22 +441,24 @@ const initializeWheel = (items: any[]) => {
             ...item,
             image: null,
             imageOpacity: 1,
-            imageRadius: 0.75,
+            imageRadius: 0.7,
             imageRotation: 0,
-            imageScale: 0.03
+            imageScale: 0.035
         };
 
-        if (item.showLabel === false) {
-            processedItem.label = '';
-        } else {
-            const englishLabel = item.label;
-            const chineseLabel = item.chineseLabel;
-            const maxLength = 7;
-            processedItem.label =
-                englishLabel.length > maxLength
-                    ? englishLabel.substring(0, maxLength) + '...'
-                    : englishLabel;
-        }
+        // if (item.showLabel === false) {
+        //     processedItem.label = '';
+        // } else {
+        //     const englishLabel = item.label;
+        //     const chineseLabel = item.chineseLabel;
+        //     const maxLength = 7;
+        //     processedItem.label =
+        //         englishLabel.length > maxLength
+        //             ? englishLabel.substring(0, maxLength) + '...'
+        //             : englishLabel;
+        // }
+
+        processedItem.label = '';
 
         if (item.image) {
             const img = new Image();

@@ -12,6 +12,7 @@
                     <div class="table-header">
                         <div class="header-cell">NO.</div>
                         <div class="header-cell">Date</div>
+                        <div class="header-cell">Time</div>
                         <div class="header-cell">Win</div>
                     </div>
 
@@ -37,6 +38,7 @@
                         >
                             <div class="table-cell">{{ item.no }}</div>
                             <div class="table-cell">{{ item.date }}</div>
+                            <div class="table-cell">{{ item.time }}</div>
                             <div class="table-cell">{{ item.win }}</div>
                         </div>
 
@@ -134,7 +136,7 @@ onMounted(async () => {
         0 20px 60px rgba(0, 0, 0, 0.3),
         0 8px 16px rgba(0, 0, 0, 0.2);
     max-width: 90vw;
-    width: 500px;
+    width: 600px;
     max-height: 80vh;
     overflow: hidden;
     transform: scale(0.5) translateY(100px);
@@ -153,13 +155,13 @@ onMounted(async () => {
     }
 
     @media (max-width: 768px) {
-        width: 90vw;
-        max-width: 400px;
+        width: 95vw;
+        max-width: 500px;
     }
 }
 
 .modal-header {
-    padding: 1.5rem 2rem 1rem;
+    padding: 1.5rem 1rem 1rem;
     text-align: center;
     position: relative;
 }
@@ -198,7 +200,7 @@ onMounted(async () => {
 }
 
 .modal-content {
-    padding: 1rem 2rem 1.5rem;
+    padding: 1rem 1rem 1.5rem;
     max-height: 50vh;
     overflow: hidden;
 }
@@ -215,7 +217,7 @@ onMounted(async () => {
 
 .table-header {
     display: grid;
-    grid-template-columns: 0.8fr 1fr 1.5fr;
+    grid-template-columns: 0.6fr 1fr 0.8fr 2fr;
     background: linear-gradient(135deg, #ceffd0, #aaeec1);
     border-bottom: 2px solid #e5e7eb;
     flex-shrink: 0;
@@ -245,7 +247,7 @@ onMounted(async () => {
 
 .table-row {
     display: grid;
-    grid-template-columns: 0.8fr 1fr 1.5fr;
+    grid-template-columns: 0.6fr 1fr 0.8fr 2fr;
     border-bottom: 1px solid #e5e7eb;
     transition: background-color 0.2s ease;
 
@@ -338,7 +340,7 @@ onMounted(async () => {
 }
 
 .modal-footer {
-    padding: 1rem 2rem 1.5rem;
+    padding: 1rem 1rem 1.5rem;
     text-align: center;
 }
 

@@ -65,8 +65,8 @@ const handleMOSLogin = async (): Promise<void> => {
                     };
 
                     if (dialCode && phone) {
-                        const phoneNumber = `${dialCode}${phone}`;
-                        body.phone = phoneNumber;
+                        const contact = `${dialCode}${phone}`;
+                        body.phoneNumber = contact;
                     }
 
                     const { data } = await apiClient.post('/auth/miniAppLogin', body);
