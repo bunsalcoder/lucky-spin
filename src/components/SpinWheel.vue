@@ -129,6 +129,14 @@ const usingAwardData = ref(false);
 const spinningSound = ref<HTMLAudioElement | null>(null);
 const resultSound = ref<HTMLAudioElement | null>(null);
 
+// Web Audio API for better mobile compatibility
+const audioContext = ref<AudioContext | null>(null);
+const audioBuffers = ref<AudioBuffer[]>([]);
+const audioSources = ref<AudioBufferSourceNode[]>([]);
+const gainNodes = ref<GainNode[]>([]);
+const currentSourceIndex = ref(0);
+const isAudioInitialized = ref(false);
+
 let spinCount = 0;
 let wheel: Wheel | undefined = undefined;
 
@@ -204,7 +212,16 @@ const spinToIndex = (targetIndex: number) => {
 
     if (spinningSound.value) {
         spinningSound.value.currentTime = 0;
-        spinningSound.value.play().catch((e) => console.log('Could not play spinning sound:', e));
+        const playPromise = spinningSound.value.play();
+        if (playPromise !== undefined) {
+            playPromise.catch((e) => {
+                console.log('Could not play spinning sound:', e);
+                // Retry for mobile devices
+                setTimeout(() => {
+                    spinningSound.value?.play().catch((e2) => console.log('Retry failed:', e2));
+                }, 100);
+            });
+        }
     }
 
     wheel.onCurrentIndexChange = () => {
@@ -259,9 +276,40 @@ const spinToIndex = (targetIndex: number) => {
 const spinRandom = () => {
     if (!wheel) return;
 
-    if (spinningSound.value) {
-        spinningSound.value.currentTime = 0;
-        spinningSound.value.play().catch((e) => console.log('Could not play spinning sound:', e));
+    // Stop any existing Web Audio sources
+    audioSources.value.forEach((source) => {
+        try {
+            source.stop();
+        } catch (e) {
+            // Ignore errors if already stopped
+        }
+    });
+    audioSources.value = [];
+    gainNodes.value = [];
+
+    // Start with the slowest sound using Web Audio API
+    currentSourceIndex.value = 0;
+    if (isAudioInitialized.value && audioContext.value && audioBuffers.value.length > 0) {
+        const startSource = audioContext.value.createBufferSource();
+        const startGain = audioContext.value.createGain();
+
+        startSource.buffer = audioBuffers.value[0];
+        startSource.loop = true;
+        startSource.connect(startGain);
+        startGain.connect(audioContext.value.destination);
+        startGain.gain.value = 0.7;
+
+        startSource.start();
+        audioSources.value.push(startSource);
+        gainNodes.value.push(startGain);
+    } else {
+        // Fallback to HTML5 Audio
+        if (spinningSound.value) {
+            spinningSound.value.currentTime = 0;
+            spinningSound.value
+                .play()
+                .catch((e) => console.log('Could not play spinning sound:', e));
+        }
     }
 
     let segmentCount = 0;
@@ -270,10 +318,26 @@ const spinRandom = () => {
     let animationId: number | null = null;
 
     const updateSoundBasedOnSegments = () => {
-        if (!wheel || !spinningSound.value || !isSpinning.value) {
+        if (!wheel || !isSpinning.value) {
             if (animationId) {
                 cancelAnimationFrame(animationId);
                 animationId = null;
+            }
+            // Stop all Web Audio sources when spinning ends
+            audioSources.value.forEach((source) => {
+                try {
+                    source.stop();
+                } catch (e) {
+                    // Ignore errors if already stopped
+                }
+            });
+            audioSources.value = [];
+            gainNodes.value = [];
+
+            // Also stop HTML5 Audio fallback
+            if (spinningSound.value) {
+                spinningSound.value.pause();
+                spinningSound.value.currentTime = 0;
             }
             return;
         }
@@ -283,30 +347,46 @@ const spinRandom = () => {
 
         if (segmentInterval > 0) {
             const speedFactor = 1000 / segmentInterval;
-            const maxSpeed = 30;
 
-            const minPlaybackRate = 0.8;
-            const maxPlaybackRate = 6.0;
+            // Determine which sound to play based on speed
+            let newSoundIndex = 0;
+            if (speedFactor > 25) newSoundIndex = 4; // Ultra fast
+            else if (speedFactor > 20) newSoundIndex = 3; // Very fast
+            else if (speedFactor > 15) newSoundIndex = 2; // Fast
+            else if (speedFactor > 10) newSoundIndex = 1; // Medium
+            else newSoundIndex = 0; // Slow
 
-            let playbackRate =
-                minPlaybackRate +
-                (Math.min(speedFactor, maxSpeed) / maxSpeed) * (maxPlaybackRate - minPlaybackRate);
-
-            if (speedFactor > 20) {
-                playbackRate = Math.min(playbackRate, 4.0);
-            }
-
-            if (isFinite(playbackRate) && playbackRate > 0) {
-                playbackRate = Math.max(0.8, Math.min(6.0, playbackRate));
-                spinningSound.value.playbackRate = playbackRate;
-
-                let volume = 0.8;
-                if (speedFactor < 15) {
-                    volume = 0.8 + ((playbackRate - 0.8) / 5.2) * 0.2;
-                } else {
-                    volume = 0.7;
+            // Switch to new sound if needed
+            if (
+                newSoundIndex !== currentSourceIndex.value &&
+                isAudioInitialized.value &&
+                audioContext.value
+            ) {
+                // Stop current source
+                if (audioSources.value[currentSourceIndex.value]) {
+                    try {
+                        audioSources.value[currentSourceIndex.value].stop();
+                    } catch (e) {
+                        // Ignore errors if already stopped
+                    }
                 }
-                spinningSound.value.volume = Math.max(0.6, Math.min(1.0, volume));
+
+                // Start new source
+                const newSource = audioContext.value.createBufferSource();
+                const newGain = audioContext.value.createGain();
+
+                newSource.buffer = audioBuffers.value[newSoundIndex];
+                newSource.loop = true;
+                newSource.connect(newGain);
+                newGain.connect(audioContext.value.destination);
+                newGain.gain.value = 0.7;
+
+                newSource.start();
+
+                // Replace the current source
+                audioSources.value[currentSourceIndex.value] = newSource;
+                gainNodes.value[currentSourceIndex.value] = newGain;
+                currentSourceIndex.value = newSoundIndex;
             }
         }
 
@@ -415,7 +495,16 @@ const initializeWheel = (items: any[]) => {
 
         if (resultSound.value) {
             resultSound.value.currentTime = 0;
-            resultSound.value.play().catch((e) => console.log('Could not play result sound:', e));
+            const playPromise = resultSound.value.play();
+            if (playPromise !== undefined) {
+                playPromise.catch((e) => {
+                    console.log('Could not play result sound:', e);
+                    // Retry for mobile devices
+                    setTimeout(() => {
+                        resultSound.value?.play().catch((e2) => console.log('Retry failed:', e2));
+                    }, 100);
+                });
+            }
         }
 
         const winningIndex = $event.currentIndex;
@@ -459,15 +548,142 @@ const initializeWheel = (items: any[]) => {
 };
 
 onMounted(() => {
+    // Detect mobile device
+    const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
+        navigator.userAgent.toLowerCase()
+    );
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent.toLowerCase());
+
+    // Initialize sound effects with mobile optimizations
     spinningSound.value = new Audio('/sound/start-13691.mp3');
     spinningSound.value.loop = true;
-    spinningSound.value.volume = 0.9;
+    spinningSound.value.volume = isMobile ? 0.8 : 0.9;
+    spinningSound.value.preload = 'auto';
 
     resultSound.value = new Audio('/sound/tada-fanfare-a-6313.mp3');
-    resultSound.value.volume = 0.9;
+    resultSound.value.volume = isMobile ? 0.8 : 0.9;
+    resultSound.value.preload = 'auto';
 
+    // Initialize Web Audio API for better mobile compatibility
+    const initWebAudio = async () => {
+        try {
+            // Create audio context
+            audioContext.value = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+            // Load audio buffer
+            const response = await fetch('/sound/start-13691.mp3');
+            const arrayBuffer = await response.arrayBuffer();
+            const audioBuffer = await audioContext.value.decodeAudioData(arrayBuffer);
+
+            // Create multiple buffers with different playback rates
+            const playbackRates = [0.8, 1.5, 2.5, 3.5, 4.0];
+            audioBuffers.value = playbackRates.map((rate) => {
+                // Create a new buffer with modified playback rate
+                const newBuffer = audioContext.value!.createBuffer(
+                    audioBuffer.numberOfChannels,
+                    Math.floor(audioBuffer.length / rate),
+                    audioBuffer.sampleRate
+                );
+
+                // Copy and stretch the audio data
+                for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+                    const originalData = audioBuffer.getChannelData(channel);
+                    const newData = newBuffer.getChannelData(channel);
+
+                    for (let i = 0; i < newData.length; i++) {
+                        const originalIndex = Math.floor(i * rate);
+                        if (originalIndex < originalData.length) {
+                            newData[i] = originalData[originalIndex];
+                        }
+                    }
+                }
+
+                return newBuffer;
+            });
+
+            isAudioInitialized.value = true;
+            console.log('Web Audio API initialized successfully');
+        } catch (error) {
+            console.error('Failed to initialize Web Audio API:', error);
+            // Fallback to HTML5 Audio
+            isAudioInitialized.value = false;
+        }
+    };
+
+    // Initialize Web Audio API
+    initWebAudio();
+
+    // Initialize wheel with current products or mock data
     const items = convertProductsToWheelItems(props.products);
     initializeWheel(items);
+
+    // Mobile audio unlock function with iOS-specific handling
+    const unlockMobileAudio = () => {
+        // For iOS, we need to be more aggressive with audio unlocking
+        if (isIOS) {
+            // Create a silent audio context to unlock audio
+            try {
+                const audioContext = new (window.AudioContext ||
+                    (window as any).webkitAudioContext)();
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+
+                // Create a silent buffer to unlock audio
+                const buffer = audioContext.createBuffer(1, 1, 22050);
+                const source = audioContext.createBufferSource();
+                source.buffer = buffer;
+                source.connect(audioContext.destination);
+                source.start();
+            } catch (error) {
+                console.log('Audio context unlock failed:', error);
+            }
+        }
+
+        // Try to play and immediately pause to unlock audio
+        if (spinningSound.value) {
+            const playPromise = spinningSound.value.play();
+            if (playPromise !== undefined) {
+                playPromise
+                    .then(() => {
+                        spinningSound.value?.pause();
+                        spinningSound.value!.currentTime = 0;
+                    })
+                    .catch(() => {
+                        // Ignore errors, just trying to unlock audio
+                    });
+            }
+        }
+
+        // Unlock Web Audio API
+        if (audioContext.value && audioContext.value.state === 'suspended') {
+            audioContext.value.resume();
+        }
+
+        if (resultSound.value) {
+            const playPromise = resultSound.value.play();
+            if (playPromise !== undefined) {
+                playPromise
+                    .then(() => {
+                        resultSound.value?.pause();
+                        resultSound.value!.currentTime = 0;
+                    })
+                    .catch(() => {
+                        // Ignore errors, just trying to unlock audio
+                    });
+            }
+        }
+
+        // Remove event listeners after first interaction
+        document.removeEventListener('touchstart', unlockMobileAudio);
+        document.removeEventListener('click', unlockMobileAudio);
+        document.removeEventListener('keydown', unlockMobileAudio);
+    };
+
+    // Add event listeners for mobile audio unlock
+    document.addEventListener('touchstart', unlockMobileAudio);
+    document.addEventListener('click', unlockMobileAudio);
+    document.addEventListener('keydown', unlockMobileAudio);
 });
 
 watch(
