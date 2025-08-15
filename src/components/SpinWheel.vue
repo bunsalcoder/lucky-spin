@@ -47,6 +47,20 @@
             </div>
         </div>
     </Transition>
+
+    <!-- Custom No Coins Popup -->
+    <Transition name="popup-fade" appear>
+        <div v-if="showNoCoinsPopup" class="no-coins-popup" @click="closeNoCoinsPopup">
+            <div class="popup-overlay" @click.stop></div>
+            <div class="popup-content" @click.stop>
+                <div class="popup-icon">🪙</div>
+                <div class="popup-title">No Coins Available</div>
+                <div class="popup-message">You don't have enough coins to spin!</div>
+                <div class="popup-subtitle">Please get more coins to continue.</div>
+                <button class="popup-button" @click="closeNoCoinsPopup">Got it!</button>
+            </div>
+        </div>
+    </Transition>
 </template>
 
 <script setup lang="ts">
@@ -59,12 +73,16 @@ interface Props {
     products?: Product[];
     award?: any;
     awardLoading?: boolean;
+    coin?: number;
+    enable?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
     products: () => [],
     award: null,
-    awardLoading: false
+    awardLoading: false,
+    coin: 0,
+    enable: false
 });
 
 const emit = defineEmits<{
@@ -84,7 +102,7 @@ const properties: WheelProps = {
     itemLabelBaselineOffset: -0.15,
     itemLabelFont:
         '"Suez One", "Mochiy Pop P One", "Jua", "Unbounded", "Mitr", "Noto Sans TC", "Noto Sans SC", "Noto Sans Lao", "Noto Color Emoji"',
-    itemLabelFontSizeMax: 16,
+    itemLabelFontSizeMax: 20,
     itemBackgroundColors: [
         '#00A050',
         '#EE312A',
@@ -95,7 +113,7 @@ const properties: WheelProps = {
         '#A63DDC',
         '#077CBD'
     ],
-    rotationSpeedMax: 2000,
+    rotationSpeedMax: 10000,
     lineWidth: 1,
     lineColor: '#fff'
 };
@@ -104,6 +122,8 @@ const container = ref();
 const isSpinning = ref(false);
 const showExplosion = ref(false);
 const winningPrize = ref<any>(null);
+const showNoCoinsPopup = ref(false);
+const usingAwardData = ref(false);
 
 // Sound effects
 const spinningSound = ref<HTMLAudioElement | null>(null);
@@ -156,14 +176,27 @@ const closeExplosion = () => {
     emit('clear-award');
 };
 
+const closeNoCoinsPopup = () => {
+    showNoCoinsPopup.value = false;
+};
+
 const spin = async () => {
     if (!wheel || props.awardLoading) return;
 
-    // Start spinning immediately
-    spinRandom();
+    // Check if user has coins to spin
+    if (props.coin <= 0 || !props.enable) {
+        showNoCoinsPopup.value = true;
+        return;
+    }
+
+    // Reset award data flag
+    usingAwardData.value = false;
 
     // Request award from API
     emit('request-award');
+
+    // Start spinning immediately to show user feedback
+    spinRandom();
 };
 
 const spinToIndex = (targetIndex: number) => {
@@ -189,26 +222,29 @@ const spinToIndex = (targetIndex: number) => {
                 break;
         }
 
-        // Synchronize spinning sound with wheel speed
+        // Enhanced sound synchronization for better speed consistency
         if (spinningSound.value) {
-            const minSpeed = 0;
-            const maxSpeed = 1000;
-            const minRate = 0.5;
-            const maxRate = 8.0;
+            const speed = Math.min(wheel.rotationSpeed, 10000);
 
-            const speedRatio = Math.max(
-                0,
-                Math.min(1, (wheel.rotationSpeed - minSpeed) / (maxSpeed - minSpeed))
-            );
-            const playbackRate = minRate + speedRatio * (maxRate - minRate);
+            // Much more responsive playback rate for fast wheel speeds
+            let playbackRate;
+            if (speed > 7000) {
+                playbackRate = 6.0 + (speed - 7000) / 500; // 6.0x to 12.0x for very high speeds
+            } else if (speed > 4000) {
+                playbackRate = 3.0 + (speed - 4000) / 750; // 3.0x to 7.0x for high speeds
+            } else if (speed > 2000) {
+                playbackRate = 1.5 + (speed - 2000) / 1000; // 1.5x to 3.5x for medium speeds
+            } else {
+                playbackRate = 0.8 + speed / 2500; // 0.8x to 1.6x for low speeds
+            }
+
+            playbackRate = Math.max(0.8, Math.min(12.0, playbackRate));
+
+            // Volume that increases with speed for more dramatic effect
+            const volume = Math.max(0.5, Math.min(1.0, 0.5 + (speed / 10000) * 0.5));
 
             spinningSound.value.playbackRate = playbackRate;
-
-            const volumeRatio = Math.max(
-                0,
-                Math.min(1, (wheel.rotationSpeed - minSpeed) / (maxSpeed - minSpeed))
-            );
-            spinningSound.value.volume = Math.min(1.0, 0.4 + volumeRatio * 0.6);
+            spinningSound.value.volume = volume;
         }
     };
 
@@ -244,33 +280,38 @@ const spinRandom = () => {
         }
 
         if (spinningSound.value) {
-            const minSpeed = 0;
-            const maxSpeed = 1000;
-            const minRate = 0.5;
-            const maxRate = 8.0;
+            const speed = Math.min(wheel.rotationSpeed, 10000);
 
-            const speedRatio = Math.max(
-                0,
-                Math.min(1, (wheel.rotationSpeed - minSpeed) / (maxSpeed - minSpeed))
-            );
-            const playbackRate = minRate + speedRatio * (maxRate - minRate);
+            // Much more responsive playback rate for fast wheel speeds
+            let playbackRate;
+            if (speed > 7000) {
+                playbackRate = 6.0 + (speed - 7000) / 500; // 6.0x to 12.0x for very high speeds
+            } else if (speed > 4000) {
+                playbackRate = 3.0 + (speed - 4000) / 750; // 3.0x to 7.0x for high speeds
+            } else if (speed > 2000) {
+                playbackRate = 1.5 + (speed - 2000) / 1000; // 1.5x to 3.5x for medium speeds
+            } else {
+                playbackRate = 0.8 + speed / 2500; // 0.8x to 1.6x for low speeds
+            }
+
+            playbackRate = Math.max(0.8, Math.min(12.0, playbackRate));
+
+            // Volume that increases with speed for more dramatic effect
+            const volume = Math.max(0.5, Math.min(1.0, 0.5 + (speed / 10000) * 0.5));
 
             spinningSound.value.playbackRate = playbackRate;
-
-            const volumeRatio = Math.max(
-                0,
-                Math.min(1, (wheel.rotationSpeed - minSpeed) / (maxSpeed - minSpeed))
-            );
-            spinningSound.value.volume = Math.min(1.0, 0.4 + volumeRatio * 0.6);
+            spinningSound.value.volume = volume;
         }
     };
 
-    wheel.rotationResistance = -300;
-    wheel.spin(wheel.rotationSpeed + random.int(1200, 1800));
+    wheel.rotationResistance = -800;
+    // Use a much higher initial speed for faster spinning
+    wheel.spin(8000 + random.int(2000, 4000));
 };
 
 // Store current items for winning prize lookup
 let currentItems: any[] = [];
+let originalProducts: Product[] = [];
 
 // Initialize wheel with items
 const initializeWheel = (items: any[]) => {
@@ -278,6 +319,8 @@ const initializeWheel = (items: any[]) => {
 
     // Store the current items for winning prize lookup
     currentItems = items;
+    // Store original products for better matching
+    originalProducts = props.products || [];
 
     // Process items for the wheel
     const processedItems = items.map((item) => {
@@ -297,7 +340,7 @@ const initializeWheel = (items: any[]) => {
             // Display only English labels with ellipsis if too long
             const englishLabel = item.label;
             const chineseLabel = item.chineseLabel;
-            const maxLength = 10;
+            const maxLength = 7;
             processedItem.label =
                 englishLabel.length > maxLength
                     ? englishLabel.substring(0, maxLength) + '...'
@@ -354,7 +397,7 @@ const initializeWheel = (items: any[]) => {
         // Get the winning prize from award API or current items
         const winningIndex = $event.currentIndex;
 
-        if (props.award) {
+        if (props.award && usingAwardData.value) {
             // Use award data from API
             winningPrize.value = {
                 label: props.award.productEnName,
@@ -362,9 +405,11 @@ const initializeWheel = (items: any[]) => {
                 image: props.award.imgUrl,
                 productId: props.award.id.toString()
             };
+            console.log('Using award data for winning prize:', winningPrize.value);
         } else {
             // Fallback to current items
             winningPrize.value = currentItems[winningIndex];
+            console.log('Using wheel index for winning prize:', winningPrize.value);
         }
 
         console.log('Winning prize:', winningPrize.value);
@@ -415,6 +460,8 @@ watch(
     (newProducts) => {
         if (newProducts && newProducts.length > 0) {
             console.log('Products updated, reinitializing wheel:', newProducts);
+            // Update original products
+            originalProducts = newProducts;
             const items = convertProductsToWheelItems(newProducts);
             initializeWheel(items);
         }
@@ -427,23 +474,176 @@ watch(
     () => props.award,
     (newAward) => {
         if (newAward && currentItems.length > 0 && wheel) {
-            // Find the index of the winning product
-            const winningIndex = currentItems.findIndex(
-                (item) =>
-                    item.label === newAward.productEnName ||
-                    item.chineseLabel === newAward.productZhName
-            );
+            console.log('=== AWARD RECEIVED ===');
+            console.log('Award data:', newAward);
+            console.log('API Product Name:', newAward.productEnName);
+            console.log('API Chinese Name:', newAward.productZhName);
+            console.log('Current wheel items:', currentItems);
+            console.log('Original products:', originalProducts);
+
+            // First, try to find the matching product in original products
+            let winningIndex = -1;
+            let matchedProduct = null;
+
+            // Method 1: Match by original product data
+            if (originalProducts.length > 0) {
+                const originalIndex = originalProducts.findIndex((product) => {
+                    console.log(`Comparing: "${product.enName}" with "${newAward.productEnName}"`);
+                    console.log(`Chinese: "${product.zhName}" with "${newAward.productZhName}"`);
+
+                    // Exact match
+                    if (
+                        product.enName === newAward.productEnName ||
+                        product.zhName === newAward.productZhName
+                    ) {
+                        console.log('✅ Exact match found!');
+                        return true;
+                    }
+
+                    // Case-insensitive match
+                    if (
+                        product.enName.toLowerCase() === newAward.productEnName.toLowerCase() ||
+                        product.zhName.toLowerCase() === newAward.productZhName.toLowerCase()
+                    ) {
+                        console.log('✅ Case-insensitive match found!');
+                        return true;
+                    }
+
+                    // Contains match
+                    if (
+                        product.enName
+                            .toLowerCase()
+                            .includes(newAward.productEnName.toLowerCase()) ||
+                        newAward.productEnName.toLowerCase().includes(product.enName.toLowerCase())
+                    ) {
+                        console.log('✅ Contains match found!');
+                        return true;
+                    }
+
+                    return false;
+                });
+
+                if (originalIndex !== -1) {
+                    winningIndex = originalIndex;
+                    matchedProduct = originalProducts[originalIndex];
+                    console.log('✅ Found match in original products at index:', winningIndex);
+                }
+            }
+
+            // Method 2: Fallback to wheel items matching
+            if (winningIndex === -1) {
+                console.log('Trying fallback matching with wheel items...');
+                winningIndex = currentItems.findIndex((item, index) => {
+                    const originalLabel = item.label.replace(/\.\.\.$/, '');
+                    const apiProductName = newAward.productEnName;
+
+                    console.log(
+                        `Wheel item ${index}: "${originalLabel}" vs API: "${apiProductName}"`
+                    );
+
+                    // Exact match
+                    if (
+                        originalLabel === apiProductName ||
+                        item.chineseLabel === newAward.productZhName
+                    ) {
+                        console.log('✅ Wheel item exact match found!');
+                        return true;
+                    }
+
+                    // Case-insensitive match
+                    if (
+                        originalLabel.toLowerCase() === apiProductName.toLowerCase() ||
+                        item.chineseLabel.toLowerCase() === newAward.productZhName.toLowerCase()
+                    ) {
+                        console.log('✅ Wheel item case-insensitive match found!');
+                        return true;
+                    }
+
+                    // Contains match
+                    if (
+                        originalLabel.toLowerCase().includes(apiProductName.toLowerCase()) ||
+                        apiProductName.toLowerCase().includes(originalLabel.toLowerCase())
+                    ) {
+                        console.log('✅ Wheel item contains match found!');
+                        return true;
+                    }
+
+                    // Partial match (first few characters)
+                    const minLength = Math.min(originalLabel.length, apiProductName.length);
+                    if (minLength >= 3) {
+                        const wheelStart = originalLabel.toLowerCase().substring(0, minLength);
+                        const apiStart = apiProductName.toLowerCase().substring(0, minLength);
+                        if (wheelStart === apiStart) {
+                            console.log('✅ Wheel item partial match found!');
+                            return true;
+                        }
+                    }
+
+                    return false;
+                });
+            }
+
+            console.log('=== MATCHING RESULT ===');
+            console.log('Winning index:', winningIndex);
+            console.log('Matched product:', matchedProduct);
 
             if (winningIndex !== -1) {
-                // Adjust wheel to land on the winning product
+                // Set flag to use award data
+                usingAwardData.value = true;
+
+                // Calculate target angle
                 const targetAngle = (360 / currentItems.length) * winningIndex;
+                console.log('Target angle for index', winningIndex, ':', targetAngle);
 
-                // Add some extra rotations to make it look natural
-                const extraRotations = 360 * 2; // 2 full rotations
-                const finalAngle = extraRotations + targetAngle;
+                if (isSpinning.value) {
+                    // Get current wheel rotation
+                    const currentRotation = wheel.rotation;
+                    const currentAngle = currentRotation % 360;
 
-                // Smoothly adjust to the target position
-                wheel.spin(finalAngle);
+                    // Calculate the shortest path to the target
+                    let angleToAdd = targetAngle - currentAngle;
+
+                    // Normalize to ensure we spin in the positive direction
+                    while (angleToAdd <= 0) {
+                        angleToAdd += 360;
+                    }
+
+                    // Add extra rotations for dramatic effect (but not too many)
+                    const extraRotations = 360 * 1; // Reduced from 2 to 1 full rotation
+                    const finalAngleToSpin = extraRotations + angleToAdd;
+
+                    console.log('Current rotation:', currentRotation);
+                    console.log('Current angle:', currentAngle);
+                    console.log('Target angle:', targetAngle);
+                    console.log('Angle to add:', angleToAdd);
+                    console.log('Extra rotations:', extraRotations);
+                    console.log('Final angle to spin:', finalAngleToSpin);
+
+                    // Continue spinning to the correct position
+                    // Use spinToItem for precise positioning with gradual slowdown
+                    wheel.spinToItem(winningIndex, 5000, false, 8, 1);
+                } else {
+                    // If wheel is not spinning, start spinning to the target
+                    console.log('Starting spin to target index:', winningIndex);
+                    wheel.spinToItem(winningIndex, 5000, false, 10, 1);
+                }
+            } else {
+                console.error('❌ Could not find matching product for award:', newAward);
+                console.log(
+                    'Available original products:',
+                    originalProducts.map((p) => ({
+                        enName: p.enName,
+                        zhName: p.zhName
+                    }))
+                );
+                console.log(
+                    'Available wheel items:',
+                    currentItems.map((item) => ({
+                        label: item.label,
+                        chineseLabel: item.chineseLabel,
+                        originalLabel: item.label.replace(/\.\.\.$/, '')
+                    }))
+                );
             }
         }
     }
@@ -796,5 +996,180 @@ watch(
 .explosion-fade-leave-to {
     opacity: 0;
     transform: scale(1.1);
+}
+
+/* Custom No Coins Popup Styles */
+.no-coins-popup {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 99999 !important;
+    pointer-events: auto;
+    overflow: visible;
+    background: transparent;
+}
+
+.popup-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    animation: popupFadeIn 0.3s ease-out;
+}
+
+.popup-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+    max-width: 400px;
+    width: 90%;
+    animation: popupSlideIn 0.4s ease-out;
+}
+
+.popup-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    animation: coinBounce 0.6s ease-out 0.2s both;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.popup-title {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    animation: textSlideIn 0.5s ease-out 0.3s both;
+}
+
+.popup-message {
+    font-size: 1.2rem;
+    color: #f8f9fa;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    animation: textSlideIn 0.5s ease-out 0.4s both;
+}
+
+.popup-subtitle {
+    font-size: 1rem;
+    color: #e9ecef;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    animation: textSlideIn 0.5s ease-out 0.5s both;
+}
+
+.popup-button {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 0.8rem 2rem;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(238, 90, 36, 0.4);
+    animation: buttonSlideIn 0.5s ease-out 0.6s both;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(238, 90, 36, 0.6);
+        background: linear-gradient(135deg, #ff5252 0%, #d63031 100%);
+    }
+
+    &:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 10px rgba(238, 90, 36, 0.4);
+    }
+}
+
+/* Popup Animation Keyframes */
+@keyframes popupFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes popupSlideIn {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -60%) scale(0.8);
+    }
+    50% {
+        transform: translate(-50%, -45%) scale(1.05);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+@keyframes coinBounce {
+    0% {
+        opacity: 0;
+        transform: scale(0) rotate(-180deg);
+    }
+    50% {
+        transform: scale(1.2) rotate(-90deg);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+@keyframes textSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes buttonSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateY(30px) scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Popup Transition Animations */
+.popup-fade-enter-active {
+    transition: all 0.3s ease-out;
+}
+
+.popup-fade-leave-active {
+    transition: all 0.2s ease-in;
+}
+
+.popup-fade-enter-from {
+    opacity: 0;
+}
+
+.popup-fade-leave-to {
+    opacity: 0;
 }
 </style>

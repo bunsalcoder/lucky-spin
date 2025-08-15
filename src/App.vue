@@ -42,6 +42,8 @@
                         :products="products"
                         :award="award"
                         :award-loading="awardLoading"
+                        :coin="coin"
+                        :enable="enable"
                         @request-award="requestAward"
                         @clear-award="handleClearAward"
                         v-else
@@ -220,7 +222,7 @@ onMounted(async () => {
 
 .title-container {
     position: absolute;
-    top: 60px;
+    top: 100px;
     left: 50%;
     transform: translateX(-50%);
     text-align: center;
