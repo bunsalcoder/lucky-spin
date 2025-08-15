@@ -13,9 +13,7 @@
             <div class="main-container">
                 <div class="title-container">
                     <h1 class="main-title">
-                        <span class="title-text">REFER MORE</span>
-                        <span class="title-separator">,</span>
-                        <span class="title-text">WIN MORE</span>
+                        <span class="title-text">REFER MORE, WIN MORE</span>
                     </h1>
                     <div class="coin-and-buttons-container">
                         <button class="action-button rule-button" @click="showRules">
@@ -30,6 +28,19 @@
                             <span class="button-text">HISTORY</span>
                             <div class="button-glow"></div>
                         </button>
+                    </div>
+                    <div class="marquee-container">
+                        <div class="marquee-content">
+                            <span class="marquee-text"
+                                >The More You Refer, The More Chances You Spin & Win!</span
+                            >
+                            <span class="marquee-text"
+                                >The More You Refer, The More Chances You Spin & Win!</span
+                            >
+                            <span class="marquee-text"
+                                >The More You Refer, The More Chances You Spin & Win!</span
+                            >
+                        </div>
                     </div>
                 </div>
 
@@ -222,11 +233,23 @@ onMounted(async () => {
 
 .title-container {
     position: absolute;
-    top: 100px;
-    left: 50%;
-    transform: translateX(-50%);
-    text-align: center;
+    top: 60px;
+    left: 20px;
+    transform: none;
+    text-align: left;
     z-index: 10;
+    width: calc(100% - 40px);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+
+    /* Center title for tablet and larger screens */
+    @media (min-width: 768px) {
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        align-items: center;
+    }
 }
 
 .coin-and-buttons-container {
@@ -234,23 +257,24 @@ onMounted(async () => {
     align-items: center;
     justify-content: center;
     gap: 2rem;
-    margin-top: 1rem;
+    margin-top: 1.5rem;
+    width: 100%;
 
     @media (max-width: 768px) {
-        gap: 1.5rem;
+        // gap: 1.5rem;
     }
 
     @media (max-width: 480px) {
-        gap: 1rem;
+        // gap: 1rem;
     }
 }
 
 .main-title {
     position: relative;
-    padding: 1rem 2rem;
+    padding: 1rem 1.5rem;
     border: none;
     border-radius: 50px;
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -263,22 +287,33 @@ onMounted(async () => {
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
     transform: perspective(1000px) rotateX(0deg);
     animation: buttonFloat 4s ease-in-out infinite;
-    margin: 0;
+    margin: 0 0 1.5rem 0;
+    width: auto;
+    text-align: left;
+    white-space: nowrap;
+    line-height: 1.2;
+    background: linear-gradient(135deg, #212f56, #1a2332);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+
+    /* Center title text for tablet and larger screens */
+    @media (min-width: 768px) {
+        text-align: center;
+    }
 
     @media (max-width: 768px) {
-        padding: 0.8rem 1.5rem;
-        font-size: 1.5rem;
+        padding: 0.8rem 1.2rem;
+        font-size: 1.4rem;
     }
 
     @media (max-width: 480px) {
-        padding: 0.6rem 1.2rem;
-        font-size: 1.2rem;
+        padding: 0.6rem 1rem;
+        font-size: 1.1rem;
     }
 
-    /* Small height devices */
     @media (max-height: 800px) {
-        padding: 0.5rem 1rem;
-        font-size: 1rem;
+        padding: 0.5rem 0.8rem;
+        font-size: 0.9rem;
     }
 
     &:hover {
@@ -288,6 +323,8 @@ onMounted(async () => {
             0 6px 12px rgba(0, 0, 0, 0.3),
             inset 0 1px 0 rgba(255, 255, 255, 0.2);
         animation-play-state: paused;
+        background: linear-gradient(135deg, #2d3f6b, #212f56);
+        border-color: rgba(255, 255, 255, 0.2);
     }
 
     &:active {
@@ -296,19 +333,6 @@ onMounted(async () => {
             0 6px 20px rgba(0, 0, 0, 0.3),
             0 2px 4px rgba(0, 0, 0, 0.2),
             inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    }
-}
-
-/* Main title button styling to match rule and history buttons */
-.main-title {
-    background: linear-gradient(135deg, #212f56, #1a2332);
-    color: white;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    animation-delay: 0s;
-
-    &:hover {
-        background: linear-gradient(135deg, #2d3f6b, #212f56);
-        border-color: rgba(255, 255, 255, 0.2);
     }
 
     &::before {
@@ -327,32 +351,20 @@ onMounted(async () => {
     display: inline-block;
     color: white;
     animation: titleBounce 3s ease-in-out infinite;
-
-    &:nth-child(3) {
-        animation-delay: 0.5s;
-    }
-}
-
-.title-separator {
-    color: white;
-    text-shadow: none;
-    animation: separatorPulse 2s ease-in-out infinite;
 }
 
 .coin-container {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-top: 1rem;
+    margin-top: 0;
     gap: 0.5rem;
     animation: coinShine 3s ease-in-out infinite;
     width: 120px;
     flex-direction: row;
     flex-wrap: nowrap;
 
-    /* Small height devices */
     @media (max-height: 800px) {
-        margin-top: 30px;
         gap: 0.3rem;
     }
 }
@@ -373,7 +385,6 @@ onMounted(async () => {
         font-size: 2rem;
     }
 
-    /* Small height devices */
     @media (max-height: 800px) {
         font-size: 1.5rem;
     }
@@ -383,12 +394,7 @@ onMounted(async () => {
     font-size: 2rem;
     font-weight: bold;
     color: #ffffff;
-    // text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
     animation: numberPulse 2s ease-in-out infinite;
-    // display: flex;
-    // align-items: center;
-    // justify-content: center;
-    // line-height: 1;
 
     @media (max-width: 768px) {
         font-size: 1.8rem;
@@ -398,63 +404,61 @@ onMounted(async () => {
         font-size: 1.5rem;
     }
 
-    /* Small height devices */
     @media (max-height: 800px) {
         font-size: 1.2rem;
     }
 }
 
-.confetti-container {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+.marquee-container {
+    margin-top: 1.5rem !important;
     width: 100%;
-    height: 100%;
-    pointer-events: none;
-}
+    overflow: hidden;
+    position: relative;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-.confetti {
-    position: absolute;
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(45deg, #22c55e, #16a34a);
-    border-radius: 50%;
-    animation: confettiFloat 4s ease-in-out infinite;
-
-    &::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(45deg, #16a34a, #15803d);
-        border-radius: 50%;
+    @media (max-width: 768px) {
+        margin-top: 1rem;
+        height: 35px;
     }
 
-    &::after {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 20px;
-        height: 20px;
-        background: #ffffff;
-        border-radius: 50%;
+    @media (max-width: 480px) {
+        margin-top: 0.8rem;
+        height: 30px;
+    }
+
+    @media (max-height: 800px) {
+        margin-top: 0.5rem;
+        height: 25px;
     }
 }
 
-.confetti-left {
-    left: -80px;
-    animation-delay: 0s;
+.marquee-content {
+    display: flex;
+    animation: marqueeScroll 45s linear infinite;
+    white-space: nowrap;
+    gap: 3rem;
 }
 
-.confetti-right {
-    right: -80px;
-    animation-delay: 2s;
+.marquee-text {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #ffffff;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+
+    @media (max-width: 768px) {
+        font-size: 1.1rem;
+    }
+
+    @media (max-width: 480px) {
+        font-size: 1rem;
+    }
+
+    @media (max-height: 800px) {
+        font-size: 0.9rem;
+    }
 }
 
 .wheel-container {
@@ -497,7 +501,6 @@ onMounted(async () => {
         font-size: 0.9rem;
     }
 
-    /* Small height devices */
     @media (max-height: 800px) {
         padding: 0.5rem 1rem;
         font-size: 0.8rem;
@@ -522,13 +525,13 @@ onMounted(async () => {
 }
 
 .rule-button {
-    background: linear-gradient(135deg, #212f56, #1a2332);
+    background: linear-gradient(135deg, #ffd54f, #ffb100);
     color: white;
     border: 2px solid rgba(255, 255, 255, 0.1);
     animation-delay: 0s;
 
     &:hover {
-        background: linear-gradient(135deg, #2d3f6b, #212f56);
+        background: linear-gradient(135deg, #ffe082, #ffb100);
         border-color: rgba(255, 255, 255, 0.2);
     }
 
@@ -543,13 +546,13 @@ onMounted(async () => {
 }
 
 .history-button {
-    background: linear-gradient(135deg, #212f56, #1a2332);
+    background: linear-gradient(135deg, #4caf50, #00a050);
     color: white;
     border: 2px solid rgba(255, 255, 255, 0.1);
     animation-delay: 2s;
 
     &:hover {
-        background: linear-gradient(135deg, #2d3f6b, #212f56);
+        background: linear-gradient(135deg, #66bb6a, #00a050);
         border-color: rgba(255, 255, 255, 0.2);
     }
 
@@ -613,37 +616,6 @@ onMounted(async () => {
     }
 }
 
-@keyframes titleButtonFloat {
-    0%,
-    100% {
-        transform: perspective(1000px) rotateX(0deg) translateY(0);
-    }
-    50% {
-        transform: perspective(1000px) rotateX(3deg) translateY(-8px);
-    }
-}
-
-@keyframes titleButtonGlow {
-    0% {
-        left: -100%;
-    }
-    50% {
-        left: 100%;
-    }
-    100% {
-        left: 100%;
-    }
-}
-
-@keyframes titleGlow {
-    0% {
-        filter: drop-shadow(0 0 10px rgba(96, 165, 250, 0.5));
-    }
-    100% {
-        filter: drop-shadow(0 0 20px rgba(96, 165, 250, 0.8));
-    }
-}
-
 @keyframes titleBounce {
     0%,
     100% {
@@ -651,38 +623,6 @@ onMounted(async () => {
     }
     50% {
         transform: translateY(-10px);
-    }
-}
-
-@keyframes separatorPulse {
-    0%,
-    100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-    50% {
-        opacity: 0.7;
-        transform: scale(1.2);
-    }
-}
-
-@keyframes confettiFloat {
-    0%,
-    100% {
-        transform: translateY(0) rotate(0deg);
-        opacity: 0.8;
-    }
-    25% {
-        transform: translateY(-20px) rotate(90deg);
-        opacity: 1;
-    }
-    50% {
-        transform: translateY(-10px) rotate(180deg);
-        opacity: 0.9;
-    }
-    75% {
-        transform: translateY(-30px) rotate(270deg);
-        opacity: 1;
     }
 }
 
@@ -717,77 +657,12 @@ onMounted(async () => {
     }
 }
 
-.confirm-button {
-    float: right;
-}
-
-@mixin afterBg {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    border-radius: 50%;
-}
-
-.sidebar-button {
-    position: fixed;
-    top: calc(50% - 25px);
-    right: 1rem;
-    transform: translateY(-50%);
-    width: 50px;
-    height: 50px;
-    z-index: 999;
-
-    animation: shockwaveJump 2s ease-out infinite;
-
-    &:after {
-        @include afterBg;
-        animation: shockwave 2s 0.65s ease-out infinite;
-    }
-
-    &:before {
-        @include afterBg;
-        animation: shockwave 2s 0.5s ease-out infinite;
-    }
-}
-
-@keyframes shockwaveJump {
+@keyframes marqueeScroll {
     0% {
-        transform: scale(1);
-    }
-    40% {
-        transform: scale(1.08);
-    }
-    50% {
-        transform: scale(0.98);
-    }
-    55% {
-        transform: scale(1.02);
-    }
-    60% {
-        transform: scale(0.98);
+        transform: translateX(100%);
     }
     100% {
-        transform: scale(1);
-    }
-}
-
-@keyframes shockwave {
-    0% {
-        transform: scale(1);
-        box-shadow:
-            0 0 2px rgba(255, 255, 255, 0.15),
-            inset 0 0 1px rgba(255, 255, 255, 0.15);
-    }
-    95% {
-        box-shadow:
-            0 0 50px rgba(255, 255, 255, 0),
-            inset 0 0 30px rgba(255, 255, 255, 0);
-    }
-    100% {
-        transform: scale(2.25);
+        transform: translateX(-100%);
     }
 }
 

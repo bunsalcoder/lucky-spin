@@ -23,7 +23,14 @@ const apiClient: AxiosInstance = axios.create(API_CONFIG);
 apiClient.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
         const token = localStorage.getItem('luckyWheelToken');
-        if (token && config.headers) {
+
+        // Skip adding Bearer token for authentication endpoints
+        const isAuthEndpoint =
+            config.url &&
+            (config.url.includes('/auth/miniAppLogin') ||
+                config.url.includes('/auth/loginWithOpenId'));
+
+        if (token && config.headers && !isAuthEndpoint) {
             config.headers['Authorization'] = `Bearer ${token}`;
         }
 
@@ -48,11 +55,17 @@ apiClient.interceptors.response.use(
         return response;
     },
     async (error: any) => {
-        // Handle 403 Forbidden - try to refresh token
-        if (error.response && error.response.status === 403) {
-            // Don't retry award API calls to prevent infinite loops
-            if (error.config.url && error.config.url.includes('/lottery/award')) {
-                console.error('Award API returned 403 - not retrying to prevent loops');
+        // Handle 401 Unauthorized and 403 Forbidden - try to refresh token
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+            // Don't retry authentication endpoints to prevent infinite loops
+            if (
+                error.config.url &&
+                (error.config.url.includes('/auth/miniAppLogin') ||
+                    error.config.url.includes('/auth/loginWithOpenId'))
+            ) {
+                console.error(
+                    'Authentication endpoint returned 401/403 - not retrying to prevent loops'
+                );
                 return Promise.reject(error);
             }
 
@@ -63,8 +76,10 @@ apiClient.interceptors.response.use(
                     // Add a small delay to ensure token is properly set
                     await new Promise((resolve) => setTimeout(resolve, 100));
 
-                    // Retry the original request
+                    // Retry the original request with fresh token
                     const originalRequest = error.config;
+                    // Clear the old Authorization header so the request interceptor can add the fresh token
+                    delete originalRequest.headers['Authorization'];
                     return apiClient(originalRequest);
                 }
             } catch (refreshError) {
@@ -79,6 +94,9 @@ apiClient.interceptors.response.use(
             switch (error.response.status) {
                 case 401:
                     console.error('Unauthorized access');
+                    break;
+                case 403:
+                    console.error('Forbidden access');
                     break;
                 case 404:
                     console.error('Resource not found');

@@ -1,47 +1,79 @@
 body {
-  // Should also change SpinWheel.vue
-  --font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial,
-    sans-serif;
-  font-family: var(--font-family);
-  // For font checking
-  // http://localhost:5173?group=Font%20test&data=eJw1jr9OwlAUxnefog_AUn0GF2fj7mCwgVQTWHRqqaYBWhgQCkqsklsh1dZGRMpFZMH99g0u9r_RpI_gbYnD-ZLz-76c8-2y-SJTOqa3d3L0VjjjPdsIxGo81kLxOiUmR4gPr2Jb3ZBA0by56fJ1l9fdyqMr1DYweB9ETzeRboQTyV-0gl4l5fLUv6yvpKPP-zLDHhLiP5tBR8TwFsMXDPVMtUyHqStbPnzAwMDgAwMLA0Bh0MYaR_2zaaZNDHgS95YX6M4RHN7hEUQ2mqWNhSZ5GXUNR0DQ4ZDlKGhBEhJJWMSP1dZvu_89MX46r2SN3mq-rOwza7hk89QBs56L5bT4eEBO7K1652cF6vSkWCowhCZqlyPTSNTh6Ks_StRGNUf_ActcwdU
+    // Should also change SpinWheel.vue
+    --font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial,
+        sans-serif;
+    font-family: var(--font-family);
+    // For font checking
+    // http://localhost:5173?group=Font%20test&data=eJw1jr9OwlAUxnefog_AUn0GF2fj7mCwgVQTWHRqqaYBWhgQCkqsklsh1dZGRMpFZMH99g0u9r_RpI_gbYnD-ZLz-76c8-2y-SJTOqa3d3L0VjjjPdsIxGo81kLxOiUmR4gPr2Jb3ZBA0by56fJ1l9fdyqMr1DYweB9ETzeRboQTyV-0gl4l5fLUv6yvpKPP-zLDHhLiP5tBR8TwFsMXDPVMtUyHqStbPnzAwMDgAwMLA0Bh0MYaR_2zaaZNDHgS95YX6M4RHN7hEUQ2mqWNhSZ5GXUNR0DQ4ZDlKGhBEhJJWMSP1dZvu_89MX46r2SN3mq-rOwza7hk89QBs56L5bT4eEBO7K1652cF6vSkWCowhCZqlyPTSNTh6Ks_StRGNUf_ActcwdU
 
-  $background-color: #212f56;
+    $background-color: #ffffff;
 
-  background: $background-color;
-  background: -moz-radial-gradient(center, circle cover, $background-color 0%, #000000 100%);
-  background: -webkit-radial-gradient(center, circle cover, $background-color 0%, #000000 100%);
-  background: radial-gradient(circle at center, $background-color 0%, #000000 100%);
-  background-attachment: fixed;
+    background: $background-color;
+    background: -moz-linear-gradient(
+        to bottom,
+        #929292 0%,
+        #1a2332 25%,
+        #1a2332 50%,
+        #1a2332 75%,
+        #000000 100%
+    );
+    background: -webkit-linear-gradient(
+        to bottom,
+        #929292 0%,
+        #1a2332 25%,
+        #1a2332 50%,
+        #1a2332 75%,
+        #000000 100%
+    );
+    background: linear-gradient(
+        to bottom,
+        #929292 0%,
+        #1a2332 25%,
+        #1a2332 50%,
+        #1a2332 75%,
+        #000000 100%
+    );
+    background-attachment: fixed;
 
-  margin: 0;
+    margin: 0;
 
-  /**
+    /**
     * When a dialog modal is triggered, this value is used to hide the scrollbar and add a margin-right to the body.
     * This fix is necessary when using ScrollPanel and there is no scrollbar width.
     */
-  --scrollbar-width: 0 !important;
+    --scrollbar-width: 0 !important;
+
+    // Disable text selection, copying, and zoom on mobile devices
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: none;
+    -ms-text-size-adjust: none;
+    text-size-adjust: none;
 }
 
 .p-tooltip {
-  font-family:
-    'Roboto',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    'Helvetica Neue',
-    Arial,
-    sans-serif;
-  font-size: 0.75rem;
-  text-align: center;
-  font-weight: 700;
+    font-family:
+        'Roboto',
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        'Helvetica Neue',
+        Arial,
+        sans-serif;
+    font-size: 0.75rem;
+    text-align: center;
+    font-weight: 700;
 }
 
 :not(li) > a {
-  color: var(--primary-color);
-  text-decoration: none;
+    color: var(--primary-color);
+    text-decoration: none;
 
-  &:hover {
-    text-decoration: underline;
-  }
+    &:hover {
+        text-decoration: underline;
+    }
 }
