@@ -11,9 +11,9 @@
                 <div class="history-table">
                     <div class="table-header">
                         <div class="header-cell">NO.</div>
-                        <div class="header-cell">Date</div>
-                        <div class="header-cell">Time</div>
+                        <div class="header-cell">Date time</div>
                         <div class="header-cell">Win</div>
+                        <div class="header-cell">Status</div>
                     </div>
 
                     <div class="table-body">
@@ -37,9 +37,14 @@
                             :key="index"
                         >
                             <div class="table-cell">{{ item.no }}</div>
-                            <div class="table-cell">{{ item.date }}</div>
-                            <div class="table-cell">{{ item.time }}</div>
+                            <div class="table-cell">{{ item.date }} {{ item.time }}</div>
                             <div class="table-cell">{{ item.win }}</div>
+                            <div
+                                class="table-cell status-cell"
+                                :class="getStatusClass(item.status)"
+                            >
+                                {{ getStatusText(item.status) }}
+                            </div>
                         </div>
 
                         <!-- Empty state -->
@@ -71,6 +76,32 @@ const modal = ref<HTMLElement>();
 
 // Use the history composable
 const { historyItems, loading, error, loadHistory } = useHistory();
+
+const getStatusText = (status: number): string => {
+    switch (status) {
+        case 1:
+            return 'Awaiting Collection';
+        case 2:
+            return 'Award Collected';
+        case 3:
+            return 'Cancelled';
+        default:
+            return 'Unknown';
+    }
+};
+
+const getStatusClass = (status: number): string => {
+    switch (status) {
+        case 1:
+            return 'status-awaiting';
+        case 2:
+            return 'status-collected';
+        case 3:
+            return 'status-cancelled';
+        default:
+            return 'status-unknown';
+    }
+};
 
 const closeModal = () => {
     if (modal.value) {
@@ -217,7 +248,7 @@ onMounted(async () => {
 
 .table-header {
     display: grid;
-    grid-template-columns: 0.6fr 1fr 0.8fr 2fr;
+    grid-template-columns: 0.5fr 1.2fr 1.5fr 0.8fr;
     background: linear-gradient(135deg, #ceffd0, #aaeec1);
     border-bottom: 2px solid #e5e7eb;
     flex-shrink: 0;
@@ -247,7 +278,7 @@ onMounted(async () => {
 
 .table-row {
     display: grid;
-    grid-template-columns: 0.6fr 1fr 0.8fr 2fr;
+    grid-template-columns: 0.5fr 1.2fr 1.5fr 0.8fr;
     border-bottom: 1px solid #e5e7eb;
     transition: background-color 0.2s ease;
 
@@ -271,6 +302,26 @@ onMounted(async () => {
         font-size: 0.9rem;
         padding: 0.8rem;
     }
+}
+
+.status-cell {
+    font-weight: 600;
+}
+
+.status-awaiting {
+    color: #d97706;
+}
+
+.status-collected {
+    color: #059669;
+}
+
+.status-cancelled {
+    color: #dc2626;
+}
+
+.status-unknown {
+    color: #6b7280;
 }
 
 .loading-state,

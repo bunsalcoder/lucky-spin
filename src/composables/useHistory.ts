@@ -6,6 +6,7 @@ export interface HistoryItem {
     date: string;
     time: string;
     win: string;
+    status: number;
     chineseName?: string;
 }
 
@@ -51,7 +52,8 @@ export function useHistory() {
                 date: formattedDate,
                 time: formattedTime,
                 win: record.productEnName,
-                chineseName: record.productZhName
+                chineseName: record.productZhName,
+                status: record.status
             };
         });
     });
