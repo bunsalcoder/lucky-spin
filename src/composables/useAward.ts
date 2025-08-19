@@ -23,6 +23,9 @@ export function useAward() {
             if (response.code === '200') {
                 award.value = response.data;
                 return response.data;
+            } else if (response.code === '1000') {
+                error.value = 'Out of stock';
+                return null;
             } else {
                 error.value = response.message || 'Failed to get award';
                 return null;

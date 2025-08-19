@@ -7,12 +7,12 @@
         </picture>
         <div
             class="icon"
-            :class="{ spinning: isSpinning }"
-            @click="!isSpinning && spin()"
-            @keyup.enter="!isSpinning && spin()"
-            @keyup.space="!isSpinning && spin()"
+            :class="{ spinning: isSpinning && !isIdleSpinning }"
+            @click="(!isSpinning || isIdleSpinning) && spin()"
+            @keyup.enter="(!isSpinning || isIdleSpinning) && spin()"
+            @keyup.space="(!isSpinning || isIdleSpinning) && spin()"
             v-tooltip.bottom="{
-                value: isSpinning ? 'Spinning...' : '↻ Spin!',
+                value: isSpinning && !isIdleSpinning ? 'Spinning...' : '↻ Spin!',
                 class: 'text-xl',
                 escape: true
             }"
@@ -73,6 +73,7 @@ interface Props {
     products?: Product[];
     award?: any;
     awardLoading?: boolean;
+    awardError?: string | null;
     coin?: number;
     enable?: boolean;
 }
@@ -81,6 +82,7 @@ const props = withDefaults(defineProps<Props>(), {
     products: () => [],
     award: null,
     awardLoading: false,
+    awardError: null,
     coin: 0,
     enable: false
 });
@@ -88,6 +90,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
     'request-award': [];
     'clear-award': [];
+    'show-out-of-stock': [];
 }>();
 
 const properties: WheelProps = {
@@ -124,6 +127,7 @@ const showExplosion = ref(false);
 const winningPrize = ref<any>(null);
 const showNoCoinsPopup = ref(false);
 const usingAwardData = ref(false);
+const isIdleSpinning = ref(false);
 
 // Sound effects
 const spinningSound = ref<HTMLAudioElement | null>(null);
@@ -180,97 +184,64 @@ const getParticleStyle = (index: number) => {
 
 const closeExplosion = () => {
     showExplosion.value = false;
-    // Clear award and refresh coin
     emit('clear-award');
+
+    startIdleSpinning();
 };
 
 const closeNoCoinsPopup = () => {
     showNoCoinsPopup.value = false;
 };
 
+const startIdleSpinning = () => {
+    if (!wheel || isSpinning.value || props.awardLoading) return;
+
+    isIdleSpinning.value = true;
+
+    if (spinningSound.value && !spinningSound.value.paused) {
+        spinningSound.value.pause();
+        spinningSound.value.currentTime = 0;
+    }
+
+    wheel.rotationResistance = 0;
+
+    const continueIdleSpinning = () => {
+        if (isIdleSpinning.value && !isSpinning.value && wheel) {
+            let currentRotation = wheel.rotation || 0;
+            const spinStep = 0.1;
+
+            const continuousSpin = () => {
+                if (isIdleSpinning.value && !isSpinning.value && wheel) {
+                    currentRotation += spinStep;
+                    wheel.rotation = currentRotation;
+                    requestAnimationFrame(continuousSpin);
+                }
+            };
+
+            requestAnimationFrame(continuousSpin);
+        }
+    };
+
+    continueIdleSpinning();
+};
+
 const spin = async () => {
     if (!wheel || props.awardLoading) return;
 
-    // Check if user has coins to spin
     if (props.coin <= 0 || !props.enable) {
         showNoCoinsPopup.value = true;
         return;
     }
 
-    // Reset award data flag
     usingAwardData.value = false;
+    isIdleSpinning.value = false;
 
-    // Request award from API
-    emit('request-award');
-
-    // Start spinning immediately to show user feedback
-    spinRandom();
-};
-
-const spinToIndex = (targetIndex: number) => {
-    if (!wheel) return;
-
-    if (spinningSound.value) {
-        spinningSound.value.currentTime = 0;
-        const playPromise = spinningSound.value.play();
-        if (playPromise !== undefined) {
-            playPromise.catch((e) => {
-                console.log('Could not play spinning sound:', e);
-                // Retry for mobile devices
-                setTimeout(() => {
-                    spinningSound.value?.play().catch((e2) => console.log('Retry failed:', e2));
-                }, 100);
-            });
-        }
+    if (wheel && !isSpinning.value) {
+        wheel.rotationResistance = properties.rotationResistance || 0;
     }
 
-    wheel.onCurrentIndexChange = () => {
-        if (!wheel) return;
-
-        switch (true) {
-            case wheel.rotationSpeed < 400:
-                wheel.rotationResistance = -100;
-                break;
-            case wheel.rotationSpeed < 100:
-                wheel.rotationResistance = -30;
-                break;
-            case wheel.rotationSpeed < 30:
-                wheel.rotationResistance = -10;
-                break;
-        }
-
-        // Enhanced sound synchronization for better speed consistency
-        if (spinningSound.value) {
-            const speed = Math.min(wheel.rotationSpeed, 10000);
-
-            // Much more responsive playback rate for fast wheel speeds
-            let playbackRate;
-            if (speed > 7000) {
-                playbackRate = 6.0 + (speed - 7000) / 500; // 6.0x to 12.0x for very high speeds
-            } else if (speed > 4000) {
-                playbackRate = 3.0 + (speed - 4000) / 750; // 3.0x to 7.0x for high speeds
-            } else if (speed > 2000) {
-                playbackRate = 1.5 + (speed - 2000) / 1000; // 1.5x to 3.5x for medium speeds
-            } else {
-                playbackRate = 0.8 + speed / 2500; // 0.8x to 1.6x for low speeds
-            }
-
-            playbackRate = Math.max(0.8, Math.min(12.0, playbackRate));
-
-            // Volume that increases with speed for more dramatic effect
-            const volume = Math.max(0.5, Math.min(1.0, 0.5 + (speed / 10000) * 0.5));
-
-            spinningSound.value.playbackRate = playbackRate;
-            spinningSound.value.volume = volume;
-        }
-    };
-
-    wheel.rotationResistance = -300;
-    // Spin to target index with some randomness
-    const spinDistance = random.int(3, 5); // Spin 3-5 full rotations
-    const targetAngle = (360 / currentItems.length) * targetIndex;
-    const totalAngle = 360 * spinDistance + targetAngle;
-    wheel.spin(totalAngle);
+    emit('request-award');
+    spinRandom();
 };
 
 const spinRandom = () => {
@@ -487,7 +458,10 @@ const initializeWheel = (items: any[]) => {
     wheel.spin(10);
 
     wheel.onRest = ($event) => {
-        console.log('Spin ended on:', $event);
+        if (isIdleSpinning.value) {
+            return;
+        }
+
         isSpinning.value = false;
 
         if (spinningSound.value) {
@@ -495,50 +469,50 @@ const initializeWheel = (items: any[]) => {
             spinningSound.value.currentTime = 0;
         }
 
-        if (resultSound.value) {
-            resultSound.value.currentTime = 0;
-            const playPromise = resultSound.value.play();
-            if (playPromise !== undefined) {
-                playPromise.catch((e) => {
-                    console.log('Could not play result sound:', e);
-                    // Retry for mobile devices
-                    setTimeout(() => {
-                        resultSound.value?.play().catch((e2) => console.log('Retry failed:', e2));
-                    }, 100);
-                });
+        if (usingAwardData.value || props.award) {
+            if (resultSound.value) {
+                resultSound.value.currentTime = 0;
+                const playPromise = resultSound.value.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch((e) => {
+                        setTimeout(() => {
+                            resultSound.value?.play();
+                        }, 100);
+                    });
+                }
             }
+
+            const winningIndex = $event.currentIndex;
+
+            if (props.award && usingAwardData.value) {
+                winningPrize.value = {
+                    label: props.award.productEnName,
+                    chineseLabel: props.award.productZhName,
+                    image: props.award.imgUrl,
+                    productId: props.award.id.toString()
+                };
+            } else {
+                winningPrize.value = currentItems[winningIndex];
+            }
+
+            showExplosion.value = true;
         }
-
-        const winningIndex = $event.currentIndex;
-
-        if (props.award && usingAwardData.value) {
-            winningPrize.value = {
-                label: props.award.productEnName,
-                chineseLabel: props.award.productZhName,
-                image: props.award.imgUrl,
-                productId: props.award.id.toString()
-            };
-            console.log('Using award data for winning prize:', winningPrize.value);
-        } else {
-            winningPrize.value = currentItems[winningIndex];
-            console.log('Using wheel index for winning prize:', winningPrize.value);
-        }
-
-        console.log('Winning prize:', winningPrize.value);
-        console.log('Winning index:', winningIndex);
-
-        showExplosion.value = true;
-        console.log('Explosion should be visible:', showExplosion.value);
     };
 
     wheel.onSpin = () => {
-        console.log('Spin started');
-        isSpinning.value = true;
+        if (!isIdleSpinning.value) {
+            isSpinning.value = true;
 
-        if (spinningSound.value && spinningSound.value.paused) {
-            spinningSound.value
-                .play()
-                .catch((e) => console.log('Could not play spinning sound:', e));
+            if (spinningSound.value && spinningSound.value.paused) {
+                spinningSound.value
+                    .play()
+                    .catch((e) => console.log('Could not play spinning sound:', e));
+            }
+        } else {
+            if (spinningSound.value && !spinningSound.value.paused) {
+                spinningSound.value.pause();
+                spinningSound.value.currentTime = 0;
+            }
         }
     };
 
@@ -547,6 +521,12 @@ const initializeWheel = (items: any[]) => {
             wheel.itemLabelRadiusMax = 0.3;
         }
     }, 50);
+
+    setTimeout(() => {
+        if (!isSpinning.value && wheel && !isIdleSpinning.value) {
+            startIdleSpinning();
+        }
+    }, 3000);
 };
 
 onMounted(() => {
@@ -699,6 +679,17 @@ watch(
         }
     },
     { deep: true }
+);
+
+// Watch for spinning state to show out-of-stock modal when wheel stops
+watch(
+    () => isSpinning.value,
+    (isSpinningNow) => {
+        // When wheel stops spinning and there's an out-of-stock error, show modal
+        if (!isSpinningNow && props.awardError === 'Out of stock') {
+            emit('show-out-of-stock');
+        }
+    }
 );
 
 // Watch for award response
@@ -1383,6 +1374,15 @@ watch(
     100% {
         opacity: 1;
         transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes continuousSpin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
     }
 }
 

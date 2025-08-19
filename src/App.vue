@@ -53,10 +53,12 @@
                         :products="products"
                         :award="award"
                         :award-loading="awardLoading"
+                        :award-error="awardError"
                         :coin="coin"
                         :enable="enable"
                         @request-award="requestAward"
                         @clear-award="handleClearAward"
+                        @show-out-of-stock="showOutOfStockModal = true"
                         v-else
                     ></SpinWheel>
                 </div>
@@ -71,13 +73,17 @@
     <!-- History Modal -->
     <HistoryModal v-if="showHistoryModal" @close="hideHistory" />
 
+    <!-- Out of Stock Modal -->
+    <OutOfStockModal v-if="showOutOfStockModal" @close="hideOutOfStock" />
+
     <DynamicDialog />
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import RulesModal from '@/components/RulesModal.vue';
 import HistoryModal from '@/components/HistoryModal.vue';
+import OutOfStockModal from '@/components/OutOfStockModal.vue';
 import { useProducts } from '@/composables/useProducts';
 import { useCoin } from '@/composables/useCoin';
 import { useAward } from '@/composables/useAward';
@@ -91,6 +97,7 @@ declare global {
 
 const showRulesModal = ref(false);
 const showHistoryModal = ref(false);
+const showOutOfStockModal = ref(false);
 
 // Initialize products
 const {
@@ -125,11 +132,18 @@ const hideHistory = () => {
     showHistoryModal.value = false;
 };
 
+const hideOutOfStock = () => {
+    showOutOfStockModal.value = false;
+};
+
 const handleClearAward = async () => {
     clearAward();
     // Refresh coin after award is cleared
     await loadCoin();
 };
+
+// We'll handle the out of stock modal when the wheel stops spinning
+// instead of showing it immediately
 
 onMounted(async () => {
     // Wait for token and load products
