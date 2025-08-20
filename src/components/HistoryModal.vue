@@ -33,6 +33,7 @@
                         <div
                             v-else-if="historyItems.length > 0"
                             class="table-row"
+                            :class="{ 'status-collected-row': item.status === 2 }"
                             v-for="(item, index) in historyItems"
                             :key="index"
                         >
@@ -309,11 +310,16 @@ onMounted(async () => {
 }
 
 .status-awaiting {
-    color: #d97706;
+    color: #089a08;
 }
 
 .status-collected {
-    color: #059669;
+    color: #6b7280;
+}
+
+// Make entire row gray when status is "Award Collected"
+.table-row.status-collected-row .table-cell {
+    color: #9f9f9f;
 }
 
 .status-cancelled {
